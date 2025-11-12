@@ -1,5 +1,5 @@
 
-RGWDebugLog("################################ RGW WRITE-LOCK SCRIPT (V3 - FINAL) ################################")
+RGWDebugLog("################################ RGW WRITE-LOCK SCRIPT ################################")
 
 local ADMIN_USER_ID = "adminid"
 
