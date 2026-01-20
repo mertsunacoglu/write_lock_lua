@@ -10,7 +10,7 @@ local write_methods = {
   COPY = true 
 }
 
-local user_id = "anonymous" -- Default to anonymous
+local user_id = "anonymous"
 local is_privileged_user = false
 
 if Request and Request.User and Request.User.Id then
@@ -35,41 +35,33 @@ if method and write_methods[method] then
 
   if is_privileged_user then
     RGWDebugLog("Write-Restriction: Privileged user. ALLOWING all write operations.")
-    return 0 -- Allow
+    return 0 
+  end
+-- Always allow the Admin
+  if is_privileged_user then
+    RGWDebugLog("Write-Restriction: Privileged user. ALLOWING write.")
+    return 0 
   end
 
-  RGWDebugLog("Write-Restriction: Non-privileged user. Checking restrictions...")
-
-  local header_key = "x-amz-meta-write-restricted"
-  local header_value = nil
-  if Request.HTTP.Metadata and Request.HTTP.Metadata[header_key] then
-     header_value = Request.HTTP.Metadata[header_key]
-  end
-
-  if header_value ~= nil then
-    RGWDebugLog("Write-Restriction: Non-privileged user " .. user_id .. " attempted to set restriction header. ABORTING.")
-    return RGW_ABORT_REQUEST -- Block
-  end
-
-  local bucket_metadata = nil
+  -- For non-privileged users, check the BUCKET metadata
   if Request.Bucket and Request.Bucket.Metadata then
-    bucket_metadata = Request.Bucket.Metadata
-  end
-
-  if bucket_metadata then
-    local write_restricted = bucket_metadata["write-restricted"]
+    local bucket_meta = Request.Bucket.Metadata
+    
+    local write_restricted = bucket_meta["x-amz-meta-write-restricted""]
     
     if write_restricted == "true" then
-      RGWDebugLog("Write-Restriction: Non-privileged user " .. user_id .. " attempted to write to a restricted bucket. ABORTING.")
-      return RGW_ABORT_REQUEST -- Block
+      RGWDebugLog("Write-Restriction: LOCKED. User " .. user_id .. " attempted to write to a restricted bucket.")
+      Request.Response.Message = "Write blocked by bucket metadata lock"
+      return RGW_ABORT_REQUEST
     end
+    
+    RGWDebugLog("Write-Restriction: Bucket is not locked. ALLOWING.")
+  else
+    RGWDebugLog("Write-Restriction: No bucket metadata found (or not a bucket request). ALLOWING.")
   end
 
-  RGWDebugLog("Write-Restriction: Non-privileged user performing normal write to unrestricted bucket. ALLOWING.")
-  return 0 -- Allow
-
+  return 0 
 end
 
--- If not a write method (e.g., GET, HEAD, LIST), allow it.
-RGWDebugLog("Write-Restriction: Not a write method. Allowing.")
+-- Allow non-write methods (GET, HEAD, etc.)
 return 0
