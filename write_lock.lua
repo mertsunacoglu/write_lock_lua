@@ -14,6 +14,7 @@ local is_privileged_user = false
 
 if Request and Request.User and Request.User.Id then
   user_id = Request.User.Id
+end
 
 if user_id == ADMIN_USER_ID then
   is_privileged_user = true
