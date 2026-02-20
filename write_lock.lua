@@ -37,7 +37,7 @@ if method and write_methods[method] then
     
     if lock_status == LOCK_TAG_VALUE then
        RGWDebugLog("Write-Restriction: LOCKED. User " .. user_id .. " attempted to write to a restricted bucket.")
-       Request.Response(403)
+       Request.Response.HTTPStatusCode(403)
        return RGW_ABORT_REQUEST
     end
   end
