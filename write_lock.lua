@@ -21,7 +21,7 @@ if user_id == ADMIN_USER_ID then
 end
 
 
-local method = Request.Method or (Request.HTTP and Request.HTTP.Method)
+local method = Request.HTTP and Request.HTTP.Method
 
 if method and write_methods[method] then
   RGWDebugLog("Write-Restriction: Is a write method (" .. method .. "). Checking permissions...")
